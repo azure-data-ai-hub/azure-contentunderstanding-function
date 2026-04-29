@@ -10,6 +10,25 @@ Key features:
 - Parallel page analysis using `ThreadPoolExecutor` for improved throughput.
 - Field extraction per page, with a best-effort `TotalTaxesDue` value that falls back to `TotalDueWithDiscount` or `TaxAfterDiscount`.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    Client(["Client / Caller"])
+    AzFunc["Azure Function\nextract_pdf_content\n(HTTP trigger)"]
+    Blob[("Azure Blob Storage\nInput PDFs")]
+    CU["Azure AI\nContent Understanding"]
+    AppInsights["Application Insights\n(Logs & Telemetry)"]
+
+    Client -- "HTTP GET\n?document=&lt;name&gt;.pdf" --> AzFunc
+    AzFunc -- "Download PDF blob" --> Blob
+    Blob -- "PDF bytes" --> AzFunc
+    AzFunc -- "Analyze pages in parallel\n(ThreadPoolExecutor)" --> CU
+    CU -- "Extracted fields per page" --> AzFunc
+    AzFunc -- "JSON response" --> Client
+    AzFunc -. "Logs" .-> AppInsights
+```
+
 ## Prerequisites
 - Python 3.10+
 - Azure Functions Core Tools (for local development)
